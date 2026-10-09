@@ -14,7 +14,7 @@ type service struct {
 
 type repository interface {
 	GetGraphFromRedis(ctx context.Context) (map[string]string, error)
-	SaveDataToRedis(ctx context.Context, userData *domain.UserData) error
+	SaveDataToRedis(ctx context.Context, userData *domain.Track) error
 }
 
 func NewService(log *slog.Logger, repo repository) *service {
