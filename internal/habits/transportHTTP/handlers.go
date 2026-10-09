@@ -16,10 +16,15 @@ func (t *transportHTTP) GetGraph(w http.ResponseWriter, r *http.Request) {
 
 	graph, err := t.serv.GetGraph(ctx)
 	if err != nil {
+
+		if respErr := response.ResponseWithError(w, err); respErr != nil {
+			t.log.Warn("error in response function", err)
+		}
+
 		return
 	}
 
-	if err := response.Response(w, graph); err != nil {
+	if err := response.ResponseWithMap(w, graph); err != nil {
 		t.log.Warn("error in response function", err)
 	}
 }
@@ -31,6 +36,11 @@ func (t *transportHTTP) PostUserData(w http.ResponseWriter, r *http.Request) {
 
 	if err := request.DecodeAndValidateJSON(r, userDto); err != nil {
 		t.log.Warn("error in decode function", err)
+
+		if respErr := response.ResponseWithError(w, err); respErr != nil {
+			t.log.Warn("error in response function", err)
+		}
+
 		return
 	}
 
@@ -38,10 +48,15 @@ func (t *transportHTTP) PostUserData(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := t.serv.SaveData(ctx, userDto.dtoToDomain()); err != nil {
+
+		if respErr := response.ResponseWithError(w, err); respErr != nil {
+			t.log.Warn("error in response function", err)
+		}
+
 		return
 	}
 
-	if err := response.Response(w, map[string]string{"status": "ok"}); err != nil {
+	if err := response.ResponseWithMap(w, map[string]string{"status": "ok"}); err != nil {
 		t.log.Warn("error in response function", err)
 	}
 
