@@ -27,7 +27,7 @@ func IsErrorApp(err error) (*ErrorApp, bool) {
 func UnknownErr() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusInternalServerError,
-		Message: "unknown error",
+		Message: "internal service error",
 	}
 }
 
@@ -42,5 +42,40 @@ func BadDate() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
 		Message: "invalide date",
+	}
+}
+
+func BadTitle() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "invalide title",
+	}
+}
+
+func BadID() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "ivalid ID",
+	}
+}
+
+func BadYear() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "ivalid year",
+	}
+}
+
+func LongDescription() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "to long description",
+	}
+}
+
+func NothingToUpdate() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "nothing data for update",
 	}
 }

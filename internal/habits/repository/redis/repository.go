@@ -1,12 +1,10 @@
-package repositoryCache
+package redis
 
 import (
 	"log/slog"
 
 	"github.com/redis/go-redis/v9"
 )
-
-const habitKey = "habit:coding:2026"
 
 type repository struct {
 	log   *slog.Logger

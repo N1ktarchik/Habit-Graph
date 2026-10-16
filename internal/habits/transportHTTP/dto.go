@@ -27,10 +27,10 @@ type habitDTO struct {
 }
 
 type habitResponseDTO struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	Created_at  string `json:"created_at"`
+	CreatedAt   string `json:"created_at"`
 }
 
 func (h *habitDTO) HabitDTOToDomain() domain.Habit {
@@ -43,10 +43,10 @@ func (h *habitDTO) HabitDTOToDomain() domain.Habit {
 
 func HabitDTOFromDomain(dh domain.Habit) habitResponseDTO {
 	return habitResponseDTO{
-		Id:          dh.Id,
+		ID:          dh.ID,
 		Title:       dh.Title,
 		Description: dh.Description,
-		Created_at:  dh.Created_at,
+		CreatedAt:   dh.CreatedAt,
 	}
 }
 

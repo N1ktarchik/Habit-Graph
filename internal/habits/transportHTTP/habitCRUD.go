@@ -25,7 +25,7 @@ func (t *transportHTTP) CreateHabit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := response.ResponseOK(w, http.StatusCreated, HabitDTOFromDomain(*savedHabit)); err != nil {
-		t.log.Warn("error in response function", slog.Any("err", err))
+		t.log.Error("error in response function", slog.Any("err", err))
 	}
 
 }
@@ -45,14 +45,20 @@ func (t *transportHTTP) GetHabits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := response.ResponseOK(w, http.StatusOK, responseHabits); err != nil {
-		t.log.Warn("error in response function", slog.Any("err", err))
+		t.log.Error("error in response function", slog.Any("err", err))
 	}
 }
 
 func (t *transportHTTP) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 	t.log.Debug("new request DELETE /api/habits ")
 
-	if err := t.service.DeleteHabit(r.Context(), request.GetID(r)); err != nil {
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+	}
+
+	if err := t.service.DeleteHabit(r.Context(), id); err != nil {
 		t.sendError(w, err)
 		return
 	}
@@ -69,19 +75,25 @@ func (t *transportHTTP) UpdateHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateHabitInput := &domain.UpdateHabitInput{
+	updateHabitInput := domain.UpdateHabitInput{
 		Title:       habit.Title,
 		Description: habit.Description,
 	}
 
-	savedHabit, err := t.service.UpdateHabit(r.Context(), request.GetID(r), updateHabitInput)
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+	}
+
+	savedHabit, err := t.service.UpdateHabit(r.Context(), id, updateHabitInput)
 	if err != nil {
 		t.sendError(w, err)
 		return
 	}
 
 	if err := response.ResponseOK(w, http.StatusOK, HabitDTOFromDomain(*savedHabit)); err != nil {
-		t.log.Warn("error in response function", slog.Any("err", err))
+		t.log.Error("error in response function", slog.Any("err", err))
 	}
 
 }

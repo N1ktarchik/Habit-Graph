@@ -11,7 +11,13 @@ import (
 func (t *transportHTTP) GetGraph(w http.ResponseWriter, r *http.Request) {
 	t.log.Debug("new request GET /api/habits/{id}/graph?year=... ")
 
-	graph, err := t.service.GetGraph(r.Context(), request.GetID(r), request.GetQueryParam(r, "year"))
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+	}
+
+	graph, err := t.service.GetGraph(r.Context(), id, request.GetQueryParam(r, "year"))
 	if err != nil {
 		t.sendError(w, err)
 		return
@@ -33,7 +39,13 @@ func (t *transportHTTP) TrackActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.service.SaveData(r.Context(), request.GetID(r), dto.UserDTOToDomain()); err != nil {
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+	}
+
+	if err := t.service.SaveData(r.Context(), id, dto.UserDTOToDomain()); err != nil {
 		t.sendError(w, err)
 		return
 	}

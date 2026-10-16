@@ -1,10 +1,10 @@
 package domain
 
 type Habit struct {
-	Id          string
+	ID          string
 	Title       string
 	Description string
-	Created_at  string
+	CreatedAt   string
 }
 
 type UpdateHabitInput struct {
