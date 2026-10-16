@@ -26,10 +26,12 @@ func (s *service) GetGraph(ctx context.Context, id, year string) (map[string]str
 	}
 
 	if len(m) != 0 {
+
 		go func() {
 			bgCtx := context.WithoutCancel(ctx)
 			s.cache.SetGraph(bgCtx, m, 24*time.Hour, id, year)
 		}()
+
 	}
 
 	return m, nil

@@ -3,6 +3,8 @@ package transportHTTP
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/N1ktarchik/habbit-graph/internal/core/request"
 	"github.com/N1ktarchik/habbit-graph/internal/core/response"
@@ -15,9 +17,15 @@ func (t *transportHTTP) GetGraph(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		t.log.Debug("invalid uuid", slog.Any("err", err))
 		t.sendError(w, err)
+		return
 	}
 
-	graph, err := t.service.GetGraph(r.Context(), id, request.GetQueryParam(r, "year"))
+	year := request.GetQueryParam(r, "year")
+	if year == "" {
+		year = strconv.Itoa(time.Now().Year())
+	}
+
+	graph, err := t.service.GetGraph(r.Context(), id, year)
 	if err != nil {
 		t.sendError(w, err)
 		return
@@ -31,18 +39,19 @@ func (t *transportHTTP) GetGraph(w http.ResponseWriter, r *http.Request) {
 func (t *transportHTTP) TrackActivity(w http.ResponseWriter, r *http.Request) {
 	t.log.Debug("new request POST /api/habits/{id}/track")
 
-	dto := &tarckDTO{}
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+		return
+	}
+
+	dto := &trackDTO{}
 
 	if err := request.DecodeJSON(r, dto); err != nil {
 		t.log.Warn("error in decode function", slog.Any("err", err))
 		t.sendError(w, err)
 		return
-	}
-
-	id, err := request.GetAndValidateID(r)
-	if err != nil {
-		t.log.Debug("invalid uuid", slog.Any("err", err))
-		t.sendError(w, err)
 	}
 
 	if err := t.service.SaveData(r.Context(), id, dto.UserDTOToDomain()); err != nil {

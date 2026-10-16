@@ -21,7 +21,7 @@ type service interface {
 	CreateHabit(ctx context.Context, habit domain.Habit) (*domain.Habit, error)
 	GetHabits(ctx context.Context) ([]domain.Habit, error)
 	DeleteHabit(ctx context.Context, id string) error
-	UpdateHabit(ctx context.Context, id string, habitInput *domain.UpdateHabitInput) (*domain.Habit, error)
+	UpdateHabit(ctx context.Context, id string, habitInput domain.UpdateHabitInput) (*domain.Habit, error)
 }
 
 func NewTransportHTTP(log *slog.Logger, serv service) *transportHTTP {

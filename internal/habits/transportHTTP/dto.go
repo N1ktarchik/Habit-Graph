@@ -2,20 +2,20 @@ package transportHTTP
 
 import "github.com/N1ktarchik/habbit-graph/internal/core/domain"
 
-type tarckDTO struct {
+type trackDTO struct {
 	Date  string `json:"date"`
 	Value int    `json:"value"`
 }
 
-func (t *tarckDTO) UserDTOToDomain() domain.Track {
+func (t *trackDTO) UserDTOToDomain() domain.Track {
 	return domain.Track{
 		Date:  t.Date,
 		Value: t.Value,
 	}
 }
 
-func (t *tarckDTO) UserDTOFromDomain(dt domain.Track) tarckDTO {
-	return tarckDTO{
+func (t *trackDTO) UserDTOFromDomain(dt domain.Track) trackDTO {
+	return trackDTO{
 		Date:  dt.Date,
 		Value: dt.Value,
 	}

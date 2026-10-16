@@ -29,7 +29,7 @@ func (s *service) GetHabits(ctx context.Context) ([]domain.Habit, error) {
 	return s.repository.GetHabits(ctx)
 }
 
-func (s *service) UpdateHabit(ctx context.Context, id string, habitInput *domain.UpdateHabitInput) (*domain.Habit, error) {
+func (s *service) UpdateHabit(ctx context.Context, id string, habitInput domain.UpdateHabitInput) (*domain.Habit, error) {
 
 	if habitInput.Title == nil && habitInput.Description == nil {
 		s.log.Debug("ERR: BAD DATA: nothing to update")

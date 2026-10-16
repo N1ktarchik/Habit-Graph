@@ -27,8 +27,8 @@ func ResponseWithError(w http.ResponseWriter, err error) error {
 	errorApp, ok := errors.IsErrorApp(err)
 	if !ok {
 		newErr := errors.UnknownErr()
-		return ResponseOK(w, newErr.Code, newErr.Message)
+		return ResponseOK(w, newErr.Code, newErr)
 	}
 
-	return ResponseOK(w, errorApp.Code, errorApp.Message)
+	return ResponseOK(w, errorApp.Code, errorApp)
 }

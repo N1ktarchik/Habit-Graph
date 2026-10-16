@@ -38,44 +38,51 @@ func BadValue() *ErrorApp {
 	}
 }
 
+func BadJSON() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusBadRequest,
+		Message: "invalid JSON",
+	}
+}
+
 func BadDate() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "invalide date",
+		Message: "invalid date",
 	}
 }
 
 func BadTitle() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "invalide title",
+		Message: "invalid title",
 	}
 }
 
 func BadID() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "ivalid ID",
+		Message: "invalid ID",
 	}
 }
 
 func BadYear() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "ivalid year",
+		Message: "invalid year",
 	}
 }
 
 func LongDescription() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "to long description",
+		Message: "too long description",
 	}
 }
 
 func NothingToUpdate() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "nothing data for update",
+		Message: "no data to update",
 	}
 }

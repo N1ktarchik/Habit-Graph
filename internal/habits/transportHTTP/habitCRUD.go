@@ -56,6 +56,7 @@ func (t *transportHTTP) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		t.log.Debug("invalid uuid", slog.Any("err", err))
 		t.sendError(w, err)
+		return
 	}
 
 	if err := t.service.DeleteHabit(r.Context(), id); err != nil {
@@ -69,6 +70,13 @@ func (t *transportHTTP) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 func (t *transportHTTP) UpdateHabit(w http.ResponseWriter, r *http.Request) {
 	t.log.Debug("new request PATCH /api/habits ")
 
+	id, err := request.GetAndValidateID(r)
+	if err != nil {
+		t.log.Debug("invalid uuid", slog.Any("err", err))
+		t.sendError(w, err)
+		return
+	}
+
 	habit := &habitDTO{}
 	if err := request.DecodeJSON(r, habit); err != nil {
 		t.sendError(w, err)
@@ -78,12 +86,6 @@ func (t *transportHTTP) UpdateHabit(w http.ResponseWriter, r *http.Request) {
 	updateHabitInput := domain.UpdateHabitInput{
 		Title:       habit.Title,
 		Description: habit.Description,
-	}
-
-	id, err := request.GetAndValidateID(r)
-	if err != nil {
-		t.log.Debug("invalid uuid", slog.Any("err", err))
-		t.sendError(w, err)
 	}
 
 	savedHabit, err := t.service.UpdateHabit(r.Context(), id, updateHabitInput)
