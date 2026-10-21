@@ -20,17 +20,17 @@ func IsValidDesc(d string) bool {
 	return utf8.RuneCountInString(d) <= 200
 }
 
-func IsValidYear(y string) bool {
+func IsValidYear(y string) *int {
 	year, err := strconv.Atoi(y)
 	if err != nil {
-		return false
+		return nil
 	}
 
 	if year < 2026 || year > time.Now().Year() {
-		return false
+		return nil
 	}
 
-	return true
+	return &year
 }
 
 func IsValidDate(d string) bool {

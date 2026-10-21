@@ -31,6 +31,13 @@ func UnknownErr() *ErrorApp {
 	}
 }
 
+func NotFound() *ErrorApp {
+	return &ErrorApp{
+		Code:    http.StatusNotFound,
+		Message: "data not found",
+	}
+}
+
 func BadValue() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,

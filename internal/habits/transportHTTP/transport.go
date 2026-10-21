@@ -15,7 +15,7 @@ type transportHTTP struct {
 }
 
 type service interface {
-	GetGraph(ctx context.Context, id, year string) (map[string]string, error)
+	GetGraph(ctx context.Context, id, year string) (map[string]int, error)
 	SaveData(ctx context.Context, id string, userData domain.Track) error
 
 	CreateHabit(ctx context.Context, habit domain.Habit) (*domain.Habit, error)

@@ -1,6 +1,10 @@
 package transportHTTP
 
-import "github.com/N1ktarchik/habbit-graph/internal/core/domain"
+import (
+	"time"
+
+	"github.com/N1ktarchik/habbit-graph/internal/core/domain"
+)
 
 type trackDTO struct {
 	Date  string `json:"date"`
@@ -27,10 +31,10 @@ type habitDTO struct {
 }
 
 type habitResponseDTO struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (h *habitDTO) HabitDTOToDomain() domain.Habit {

@@ -9,8 +9,9 @@ import (
 	"github.com/N1ktarchik/habbit-graph/internal/core/errors"
 )
 
-func (s *service) GetGraph(ctx context.Context, id, year string) (map[string]string, error) {
-	if !domain.IsValidYear(year) {
+func (s *service) GetGraph(ctx context.Context, id, year string) (map[string]int, error) {
+	yearInt := domain.IsValidYear(year)
+	if yearInt == nil {
 		s.log.Debug("ERR: BAD DATA: invalid year")
 		return nil, errors.BadYear()
 	}
@@ -20,7 +21,7 @@ func (s *service) GetGraph(ctx context.Context, id, year string) (map[string]str
 		return m, nil
 	}
 
-	m, err = s.repository.GetGraph(ctx, id, year)
+	m, err = s.repository.GetGraph(ctx, id, *yearInt)
 	if err != nil {
 		return nil, err
 	}
