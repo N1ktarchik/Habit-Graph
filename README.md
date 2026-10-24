@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
 
 # 🟩 Habit-Graph
@@ -92,7 +91,6 @@ Habit-Graph/
 ├── compose.yml                        # Оркестрация контейнеров (postgres, redis, migrate, api, frontend)
 ├── Dockerfile                         # Multi-stage сборка Go-бинарника в минимальный scratch-образ
 └── Makefile                           # Автоматизация команд разработки и деплоя
-
 ```
 
 #### Инженерные особенности реализации:
@@ -113,37 +111,33 @@ Habit-Graph/
 ### Пошаговый запуск в Docker
 
 1. **Клонируйте репозиторий:**
+
 ```bash
 git clone [https://github.com/N1ktarchik/habbit-graph.git](https://github.com/N1ktarchik/habbit-graph.git)
 cd habbit-graph
-
 ```
-
 
 2. **Проверьте конфигурацию окружения:**
 В проекте уже присутствует `.env.example` (и рабочий `.env` для локального Docker-окружения). При необходимости скопируйте его:
+
 ```bash
 cp .env.example .env
-
 ```
 
-
 3. **Соберите и запустите все контейнеры:**
+
 ```bash
 make docker-up
 # или без make: docker compose up -d --build
-
 ```
 
-
 *При запуске Docker Compose автоматически поднимет `postgres` и `redis`, дождется прохождения их `healthcheck`, выполнит миграции через контейнер `migrate`, после чего запустит `api` и `frontend`.*
+
 4. **Откройте приложение в браузере:**
 * 🌐 **Веб-интерфейс (Frontend):** [http://localhost:3000](http://localhost:3000)
 * ⚙️ **Backend REST API:** [http://localhost:8080](http://localhost:8080)
 * 🐘 **PostgreSQL (внешний порт):** `localhost:5433` (БД: `habit-graph_app`, юзер: `postgres`)
 * 🟥 **Redis (внешний порт):** `localhost:6379`
-
-
 
 ---
 
@@ -152,7 +146,7 @@ make docker-up
 В проекте настроен `Makefile` для управления жизненным циклом приложения и базы данных:
 
 | Команда | Описание |
-| --- | --- |
+| :--- | :--- |
 | `make help` | Показать список всех доступных команд с описанием |
 | `make docker-up` | Собрать образы и запустить все сервисы в фоновом режиме (`docker compose up -d --build`) |
 | `make docker-down` | Остановить и удалить контейнеры проекта |
@@ -175,25 +169,13 @@ make docker-up
 ### Сводная таблица эндпоинтов
 
 | Метод | Эндпоинт | Описание | Тело запроса (JSON) | Код и формат ответа |
-| --- | --- | --- | --- | --- |
-| `POST` | `/api/habits` | Создать новую привычку | `{"title": "Чтение", "description": "Техническая литература"}` | `201 Created`<br>
-
-<br>`HabitResponseDTO` |
-| `GET` | `/api/habits` | Получить список всех привычек | — | `200 OK`<br>
-
-<br>`[]HabitResponseDTO` |
-| `PATCH` | `/api/habits/{id}` | Частично обновить название и/или описание привычки | `{"title": "Новое имя", "description": "..."}` | `200 OK`<br>
-
-<br>`HabitResponseDTO` |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/habits` | Создать новую привычку | `{"title": "Чтение", "description": "Техническая литература"}` | `201 Created` — `HabitResponseDTO` |
+| `GET` | `/api/habits` | Получить список всех привычек | — | `200 OK` — `[]HabitResponseDTO` |
+| `PATCH` | `/api/habits/{id}` | Частично обновить название и/или описание привычки | `{"title": "Новое имя", "description": "..."}` | `200 OK` — `HabitResponseDTO` |
 | `DELETE` | `/api/habits/{id}` | Удалить привычку (каскадно удаляет историю и очищает кэш Redis) | — | `204 No Content` |
-| `POST` | `/api/habits/{id}/activities`<br>
-
-<br>*(алиас: `/api/habits/{id}/track`)* | Записать / прибавить время активности за конкретную дату | `{"date": "2026-10-24", "value": 45}` *(время в минутах)* | `200 OK`<br>
-
-<br>`{"status": "ok"}` |
-| `GET` | `/api/habits/{id}/graph?year=2026` | Получить карту активности за указанный год (из кэша Redis или БД) | — | `200 OK`<br>
-
-<br>`{"2026-10-24": 45, "2026-10-25": 90}` |
+| `POST` | `/api/habits/{id}/activities` (алиас: `/api/habits/{id}/track`) | Записать / прибавить время активности за конкретную дату | `{"date": "2026-10-24", "value": 45}` *(время в минутах)* | `200 OK` — `{"status": "ok"}` |
+| `GET` | `/api/habits/{id}/graph?year=2026` | Получить карту активности за указанный год (из кэша Redis или БД) | — | `200 OK` — `{"2026-10-24": 45, "2026-10-25": 90}` |
 
 #### Пример ответа `HabitResponseDTO`:
 
@@ -204,7 +186,6 @@ make docker-up
   "description": "Разработка pet-проектов и изучение внутренностей рантайма",
   "created_at": "2026-10-24T15:04:05Z"
 }
-
 ```
 
 #### Единый формат ошибок (`ErrorApp`):
@@ -214,7 +195,6 @@ make docker-up
   "code": 400,
   "message": "invalid title"
 }
-
 ```
 
 ---
@@ -236,4 +216,4 @@ make docker-up
 
 **Никита** — Backend Developer (Go)
 
-GitHub: [@N1ktarchik](https://www.google.com/search?q=https://github.com/N1ktarchik)
+GitHub: [@N1ktarchik](https://github.com/N1ktarchik)
