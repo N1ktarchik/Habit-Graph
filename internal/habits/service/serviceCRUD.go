@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/domain"
-	"github.com/N1ktarchik/habbit-graph/internal/core/errors"
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
+	"github.com/N1ktarchik/habit-graph/internal/core/errors"
 )
 
 func (s *service) CreateHabit(ctx context.Context, habit domain.Habit) (*domain.Habit, error) {

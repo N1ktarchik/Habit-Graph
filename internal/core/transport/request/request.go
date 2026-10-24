@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/errors"
+	"github.com/N1ktarchik/habit-graph/internal/core/errors"
 	"github.com/google/uuid"
 )
 

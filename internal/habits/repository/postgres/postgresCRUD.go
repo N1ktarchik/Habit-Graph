@@ -5,10 +5,10 @@ import (
 	"errors"
 	"log/slog"
 
-	coreErrors "github.com/N1ktarchik/habbit-graph/internal/core/errors"
+	coreErrors "github.com/N1ktarchik/habit-graph/internal/core/errors"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/domain"
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
 )
 
 func (r *repository) CreateHabit(ctx context.Context, habit domain.Habit) (*domain.Habit, error) {

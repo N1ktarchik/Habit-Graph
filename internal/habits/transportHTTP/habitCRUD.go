@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/domain"
-	"github.com/N1ktarchik/habbit-graph/internal/core/request"
-	"github.com/N1ktarchik/habbit-graph/internal/core/response"
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
+	"github.com/N1ktarchik/habit-graph/internal/core/transport/request"
+	"github.com/N1ktarchik/habit-graph/internal/core/transport/response"
 )
 
 func (t *transportHTTP) CreateHabit(w http.ResponseWriter, r *http.Request) {

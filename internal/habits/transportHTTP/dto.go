@@ -3,7 +3,7 @@ package transportHTTP
 import (
 	"time"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/domain"
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
 )
 
 type trackDTO struct {

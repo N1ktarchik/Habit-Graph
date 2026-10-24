@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/N1ktarchik/habbit-graph/internal/core/errors"
+	"github.com/N1ktarchik/habit-graph/internal/core/errors"
 )
 
 func (c *cache) GetGraph(ctx context.Context, habitID, year string) (map[string]int, error) {

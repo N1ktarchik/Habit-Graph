@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
 )
 
 func (r *repository) GetGraph(ctx context.Context, habitID string, year int) (map[string]int, error) {
@@ -48,6 +50,19 @@ func (r *repository) GetGraph(ctx context.Context, habitID string, year int) (ma
 	return graph, nil
 }
 
-// func (r *repository) UpsertActivity(ctx context.Context, habitID string, userData domain.Track) error {
+func (r *repository) UpsertActivity(ctx context.Context, habitID string, userData domain.Track) error {
+	query := `
+		INSERT INTO activities (habit_id, date, duration_minutes) 
+		VALUES ($1, $2, $3) 
+		ON CONFLICT (habit_id, date) 
+		DO UPDATE SET duration_minutes = activities.duration_minutes + EXCLUDED.duration_minutes
+	`
 
-// }
+	_, err := r.db.Exec(ctx, query, habitID, userData.Date, userData.Value)
+	if err != nil {
+		r.log.Error("error in repository: postgres error: error to upsert activity", slog.Any("err:", err))
+		return err
+	}
+
+	return nil
+}
