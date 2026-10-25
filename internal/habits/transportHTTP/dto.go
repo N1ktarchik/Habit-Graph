@@ -1,0 +1,63 @@
+package transportHTTP
+
+import (
+	"time"
+
+	"github.com/N1ktarchik/habit-graph/internal/core/domain"
+)
+
+type trackDTO struct {
+	Date  string `json:"date"`
+	Value int    `json:"value"`
+}
+
+func (t *trackDTO) UserDTOToDomain() domain.Track {
+	return domain.Track{
+		Date:  t.Date,
+		Value: t.Value,
+	}
+}
+
+func (t *trackDTO) UserDTOFromDomain(dt domain.Track) trackDTO {
+	return trackDTO{
+		Date:  dt.Date,
+		Value: dt.Value,
+	}
+}
+
+type habitDTO struct {
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+}
+
+type habitResponseDTO struct {
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+func (h *habitDTO) HabitDTOToDomain() domain.Habit {
+
+	return domain.Habit{
+		Title:       pointerToStr(h.Title),
+		Description: pointerToStr(h.Description),
+	}
+}
+
+func HabitDTOFromDomain(dh domain.Habit) habitResponseDTO {
+	return habitResponseDTO{
+		ID:          dh.ID,
+		Title:       dh.Title,
+		Description: dh.Description,
+		CreatedAt:   dh.CreatedAt,
+	}
+}
+
+func pointerToStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+
+	return *s
+}
