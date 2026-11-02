@@ -14,6 +14,7 @@ type service struct {
 	cache      cache
 }
 
+//go:generate mockgen -destination=mock/repository_mock.go -package=mock . Repository
 type repository interface {
 	GetGraph(ctx context.Context, habitID string, year int) (map[string]int, error)
 	UpsertActivity(ctx context.Context, habitID string, userData domain.Track) error
@@ -24,6 +25,7 @@ type repository interface {
 	DeleteHabit(ctx context.Context, id string) error
 }
 
+//go:generate mockgen -destination=mock/repository_mock.go -package=mock . Repository
 type cache interface {
 	GetGraph(ctx context.Context, habitID, year string) (map[string]int, error)
 	SetGraph(ctx context.Context, data map[string]int, ttl time.Duration, habitID, year string)

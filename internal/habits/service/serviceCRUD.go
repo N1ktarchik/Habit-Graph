@@ -18,7 +18,7 @@ func (s *service) CreateHabit(ctx context.Context, habit domain.Habit) (*domain.
 
 	if !domain.IsValidDesc(habit.Description) {
 		s.log.Debug("ERR: BAD DATA: invalid description")
-		return nil, errors.LongDescription()
+		return nil, errors.BadDescription()
 	}
 
 	return s.repository.CreateHabit(ctx, habit)
@@ -43,7 +43,7 @@ func (s *service) UpdateHabit(ctx context.Context, id string, habitInput domain.
 
 	if habitInput.Description != nil && !domain.IsValidDesc(*habitInput.Description) {
 		s.log.Debug("ERR: BAD DATA: invalid description")
-		return nil, errors.LongDescription()
+		return nil, errors.BadDescription()
 	}
 
 	return s.repository.UpdateHabit(ctx, id, habitInput.Title, habitInput.Description)
