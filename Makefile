@@ -38,10 +38,8 @@ db-reset: ## Сбросить базу данных
 	docker compose up -d
 	docker compose run --rm migrate
 
-
-#soon
-# test: ## Запустить unit-тесты Go с race-детектором
-# 	go test -v -race -cover ./...
+test: ## Запустить unit-тесты Go с race-детектором
+	go test -v -race -cover ./...
 
 # lint: ## Запустить линтер golangci-lint
 # 	golangci-lint run ./...
