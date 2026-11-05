@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -286,6 +287,103 @@ func TestUpdateHabit(t *testing.T) {
 
 			assert.Equal(t, tc.wantDBCall, dbCalled, "состояние вызова репозитория не совпадает")
 
+		})
+	}
+}
+
+func TestDeleteHabit(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name             string
+		inputId          string
+		expectedErr      error
+		wantPostgresCall bool
+		wantRedisCall    bool
+		wantRetries      bool
+		expectedRetries  int32
+	}{
+		{
+			name:             "Valid id",
+			inputId:          "habit-id",
+			expectedErr:      nil,
+			wantPostgresCall: true,
+			wantRedisCall:    true,
+			wantRetries:      false,
+		},
+		{
+			name:             "postgres err/habit not found",
+			inputId:          " ",
+			expectedErr:      core_errors.NotFound(),
+			wantPostgresCall: true,
+			wantRedisCall:    false,
+			wantRetries:      false,
+		},
+		{
+			name:             "redis err/triggers retries",
+			inputId:          "habit-id-retry",
+			expectedErr:      nil,
+			wantPostgresCall: true,
+			wantRedisCall:    true,
+			wantRetries:      true,
+			expectedRetries:  6,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := testLogger(t)
+			postgresCalled := false
+
+			var cacheCalls atomic.Int32
+
+			r := &mockRepository{
+				DeleteHabitFunc: func(ctx context.Context, id string) error {
+					postgresCalled = true
+					if id == " " {
+						return core_errors.NotFound()
+					}
+					return nil
+				},
+			}
+
+			c := &mockCache{
+				DeleteHabitFunc: func(ctx context.Context, id string) error {
+					cacheCalls.Add(1)
+
+					if tc.wantRetries {
+						return core_errors.UnknownErr()
+					}
+					return nil
+				},
+			}
+
+			srv := service.NewService(log, r, c)
+
+			err := srv.DeleteHabit(context.Background(), tc.inputId)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectedErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.wantPostgresCall, postgresCalled, "Postgres call mismatch")
+
+			if tc.wantRetries {
+				assert.Eventually(t, func() bool {
+					return cacheCalls.Load() == tc.expectedRetries
+				}, 12*time.Second, 1*time.Second, "Фоновая горутина не выполнила нужного количества вызовов")
+			} else {
+				if tc.wantRedisCall {
+					assert.Equal(t, int32(1), cacheCalls.Load(), "Ожидался 1 вызов Redis")
+				} else {
+					assert.Equal(t, int32(0), cacheCalls.Load(), "Ожидалось 0 вызовов Redis")
+				}
+			}
 		})
 	}
 }
