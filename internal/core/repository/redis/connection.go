@@ -14,13 +14,13 @@ func New(cfg *redisConfig, logger *slog.Logger) (*redis.Client, error) {
 
 	logger.Info("connecting to redis",
 		slog.String("addr", addr),
-		slog.Int("db", cfg.DB),
+		slog.Int("db", cfg.db),
 	)
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: cfg.Password,
-		DB:       cfg.DB,
+		DB:       cfg.db,
 
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,

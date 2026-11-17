@@ -2,15 +2,18 @@ package service_test
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	core_errors "github.com/N1ktarchik/habit-graph/internal/core/errors"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/N1ktarchik/habit-graph/internal/core/domain"
 	"github.com/N1ktarchik/habit-graph/internal/habits/service"
-	"github.com/stretchr/testify/assert"
 )
 
 func ptr[T any](v T) *T {
@@ -383,6 +386,309 @@ func TestDeleteHabit(t *testing.T) {
 				} else {
 					assert.Equal(t, int32(0), cacheCalls.Load(), "Ожидалось 0 вызовов Redis")
 				}
+			}
+		})
+	}
+}
+
+func TestGetGraph(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name             string
+		inputId          string
+		inputYear        string
+		wantPostgresCall bool
+		wantPostgresErr  bool
+		wantRedisGetCall bool
+		wantRedisSetCall bool
+		expectedErr      error
+	}{
+		{
+			name:             "Valid input data (minimum year) and Redis cache hit",
+			inputId:          "habit-id",
+			inputYear:        "2026",
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisGetCall: true,
+			wantRedisSetCall: false,
+			expectedErr:      nil,
+		},
+		{
+			name:             "Valid input data (current year) and Redis cache hit",
+			inputId:          "habit-id",
+			inputYear:        strconv.Itoa(time.Now().Year()),
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisGetCall: true,
+			wantRedisSetCall: false,
+			expectedErr:      nil,
+		},
+		{
+			name:             "Valid input data and Postgres cache hit",
+			inputId:          "habit-id",
+			inputYear:        "2026",
+			wantPostgresCall: true,
+			wantPostgresErr:  false,
+			wantRedisGetCall: true,
+			wantRedisSetCall: true,
+			expectedErr:      nil,
+		},
+		{
+			name:             "Invalid input year : old year",
+			inputId:          "habit-id",
+			inputYear:        "2020",
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisGetCall: false,
+			wantRedisSetCall: false,
+			expectedErr:      core_errors.BadYear(),
+		},
+
+		{
+			name:             "Invalid input year : future year",
+			inputId:          "habit-id",
+			inputYear:        "1010020",
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisGetCall: false,
+			wantRedisSetCall: false,
+			expectedErr:      core_errors.BadYear(),
+		},
+
+		{
+			name:             "Postgres returns error",
+			inputId:          "habit-id",
+			inputYear:        "2026",
+			wantPostgresCall: true,
+			wantPostgresErr:  true,
+			wantRedisGetCall: true,
+			wantRedisSetCall: false,
+			expectedErr:      core_errors.UnknownErr(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			postgresCalled := false
+			redisGetCalled := false
+			var redisSetCalled atomic.Bool
+
+			log := testLogger(t)
+
+			r := &mockRepository{
+				GetGraphFunc: func(ctx context.Context, habitID string, year int) (map[string]int, error) {
+					postgresCalled = true
+					if tc.wantPostgresErr {
+						return nil, core_errors.UnknownErr()
+					}
+					return map[string]int{"2023-01-01": 1}, nil
+				},
+			}
+
+			c := &mockCache{
+				GetGraphFunc: func(ctx context.Context, habitID, year string) (map[string]int, error) {
+					redisGetCalled = true
+					if tc.wantPostgresCall {
+						return nil, nil
+					}
+
+					return map[string]int{"2023-01-01": 1}, nil
+				},
+
+				SetGraphFunc: func(ctx context.Context, data map[string]int, ttl time.Duration, habitID, year string) {
+					redisSetCalled.Store(true)
+				},
+			}
+
+			srv := service.NewService(log, r, c)
+
+			result, err := srv.GetGraph(context.Background(), tc.inputId, tc.inputYear)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectedErr, err)
+				assert.Nil(t, result, "при ошибке результат должен быть nil")
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, len(result), 1)
+			}
+
+			assert.Equal(t, tc.wantPostgresCall, postgresCalled, "состояние вызова Postgres не совпадает")
+			assert.Equal(t, tc.wantRedisGetCall, redisGetCalled, "состояние вызова Redis Get не совпадает")
+
+			if tc.wantRedisSetCall {
+				assert.Eventually(
+					t,
+					func() bool { return redisSetCalled.Load() },
+					2*time.Second,
+					10*time.Millisecond,
+					"состояние вызова Redis Set не совпадает (горутина не отработала)")
+			} else {
+				assert.False(t, redisSetCalled.Load(), "запись в Redis не ожидалась")
+			}
+
+		})
+	}
+}
+
+func TestSaveData(t *testing.T) {
+	t.Parallel()
+
+	today := time.Now().Format(time.DateOnly)
+	futureDate := time.Now().Add(72 * time.Hour).Format(time.DateOnly)
+
+	testCases := []struct {
+		name               string
+		inputID            string
+		inputData          domain.Track
+		wantPostgresCall   bool
+		wantPostgresErr    bool
+		wantRedisCalls     int32
+		redisFailUntilCall int32
+		expectedErr        error
+	}{
+		{
+			name:             "valid track data",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: today, Value: 5},
+			wantPostgresCall: true,
+			wantPostgresErr:  false,
+			wantRedisCalls:   1,
+			expectedErr:      nil,
+		},
+		{
+			name:             "valid track data with zero value",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: "2026-01-01", Value: 0},
+			wantPostgresCall: true,
+			wantPostgresErr:  false,
+			wantRedisCalls:   1,
+			expectedErr:      nil,
+		},
+		{
+			name:             "negative value",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: today, Value: -1},
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisCalls:   0,
+			expectedErr:      core_errors.BadValue(),
+		},
+		{
+			name:             "invalid date format",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: "16-11-2026", Value: 1},
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisCalls:   0,
+			expectedErr:      core_errors.BadDate(),
+		},
+		{
+			name:             "date year before 2026",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: "2025-12-31", Value: 1},
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisCalls:   0,
+			expectedErr:      core_errors.BadDate(),
+		},
+		{
+			name:             "future date beyond 24h limit",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: futureDate, Value: 1},
+			wantPostgresCall: false,
+			wantPostgresErr:  false,
+			wantRedisCalls:   0,
+			expectedErr:      core_errors.BadDate(),
+		},
+		{
+			name:             "postgres error",
+			inputID:          "habit-id",
+			inputData:        domain.Track{Date: today, Value: 1},
+			wantPostgresCall: true,
+			wantPostgresErr:  true,
+			wantRedisCalls:   0,
+			expectedErr:      core_errors.UnknownErr(),
+		},
+		{
+			name:               "redis fails once and succeeds on 1st retry",
+			inputID:            "habit-id",
+			inputData:          domain.Track{Date: today, Value: 1},
+			wantPostgresCall:   true,
+			wantPostgresErr:    false,
+			wantRedisCalls:     2,
+			redisFailUntilCall: 1,
+			expectedErr:        nil,
+		},
+		{
+			name:               "redis fails all 5 retries",
+			inputID:            "habit-id",
+			inputData:          domain.Track{Date: today, Value: 1},
+			wantPostgresCall:   true,
+			wantPostgresErr:    false,
+			wantRedisCalls:     6,
+			redisFailUntilCall: 6,
+			expectedErr:        nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := testLogger(t)
+			postgresCalled := false
+			var redisCalls atomic.Int32
+
+			r := &mockRepository{
+				UpsertActivityFunc: func(ctx context.Context, id string, data domain.Track) error {
+					postgresCalled = true
+					assert.Equal(t, tc.inputID, id)
+					assert.Equal(t, tc.inputData, data)
+
+					if tc.wantPostgresErr {
+						return core_errors.UnknownErr()
+					}
+					return nil
+				},
+			}
+
+			c := &mockCache{
+				DeleteGraphFunc: func(ctx context.Context, habitID, year string) error {
+					currentCall := redisCalls.Add(1)
+					assert.Equal(t, tc.inputID, habitID)
+					assert.Equal(t, tc.inputData.Date[:4], year)
+
+					if currentCall <= tc.redisFailUntilCall {
+						return errors.New("redis connection error")
+					}
+					return nil
+				},
+			}
+
+			srv := service.NewService(log, r, c)
+
+			err := srv.SaveData(context.Background(), tc.inputID, tc.inputData)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectedErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.wantPostgresCall, postgresCalled, "состояние вызова Postgres не совпадает")
+
+			if tc.wantRedisCalls > 1 {
+				assert.Eventually(t, func() bool {
+					return redisCalls.Load() == tc.wantRedisCalls
+				}, 12*time.Second, 100*time.Millisecond, "количество вызовов Redis с учетом ретраев не совпадает")
+			} else {
+				assert.Equal(t, tc.wantRedisCalls, redisCalls.Load(), "количество вызовов Redis не совпадает")
 			}
 		})
 	}

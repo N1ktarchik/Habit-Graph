@@ -1,7 +1,12 @@
 COMPOSE := docker compose
 DB_DSN := postgres://postgres:test123@localhost:5433/habit-graph_app?sslmode=disable
 
-.PHONY: help run-back run-front docker-up docker-down docker-logs migrate-up migrate-down test lint
+export TESTCONTAINERS_RYUK_DISABLED=true
+ifeq ($(OS),Windows_NT)
+	export DOCKER_HOST=npipe:////./pipe/docker_engine
+endif
+
+.PHONY: help run-back run-front docker-up docker-down docker-logs migrate-up migrate-down unit-test test-integration test-all lint
 
 help: ## Показать список всех команд
 	@awk 'BEGIN {FS = ":.*##"; printf "\nCommands:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -38,8 +43,14 @@ db-reset: ## Сбросить базу данных
 	docker compose up -d
 	docker compose run --rm migrate
 
-test: ## Запустить unit-тесты Go с race-детектором
+unit-test: ## Запуск быстрых unit-тестов с race-детектором (без Docker)
 	go test -v -race -cover ./...
 
-# lint: ## Запустить линтер golangci-lint
-# 	golangci-lint run ./...
+test-integration: ## Запуск интеграционных тестов репозиториев (Testcontainers, нужен запущенный Docker)
+	go test -v -race -cover -tags=integration ./internal/habits/repository/...
+
+test-all: ## Запуск всех тестов (unit + integration) с общим покрытием
+	go test -v -race -cover -tags=integration ./...
+
+lint: ## Запуск линтера golangci-lint
+	golangci-lint run ./...

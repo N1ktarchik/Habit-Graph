@@ -42,9 +42,13 @@ func (c *cache) GetGraph(ctx context.Context, habitID, year string) (map[string]
 func (c *cache) SetGraph(ctx context.Context, data map[string]int, ttl time.Duration, habitID, year string) {
 	key := buildKey(habitID, year)
 
-	pipe := c.redis.Pipeline()
+	fields := make(map[string]any, len(data))
+	for k, v := range data {
+		fields[k] = v
+	}
 
-	pipe.HSet(ctx, key, data)
+	pipe := c.redis.Pipeline()
+	pipe.HSet(ctx, key, fields)
 	pipe.Expire(ctx, key, ttl)
 
 	if _, err := pipe.Exec(ctx); err != nil {
@@ -65,7 +69,7 @@ func (c *cache) DeleteGraph(ctx context.Context, id, year string) error {
 
 func (c *cache) DeleteHabit(ctx context.Context, id string) error {
 	patern := buildKey(id, "")
-	var errsCount int = 0
+	errsCount := 0
 
 	iter := c.redis.Scan(ctx, 0, patern, 0).Iterator()
 
