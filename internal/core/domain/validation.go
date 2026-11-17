@@ -47,9 +47,5 @@ func IsValidDate(d string) bool {
 
 	limit := now.Add(24 * time.Hour)
 
-	if date.After(limit) {
-		return false
-	}
-
-	return true
+	return !date.After(limit)
 }

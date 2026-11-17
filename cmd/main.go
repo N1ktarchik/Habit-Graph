@@ -24,6 +24,10 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	if err := godotenv.Load(); err != nil {
 		slog.Warn("godotenv: .env file not found, reading from system env")
 	}
@@ -45,7 +49,7 @@ func main() {
 
 	log := logger.Setup(lvl)
 	slog.SetDefault(log)
-	log.Info("starting habbit-graph app", slog.String("log_level", lvl.String()))
+	log.Info("starting habit-graph app", slog.String("log_level", lvl.String()))
 
 	initCtx, initCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer initCancel()
@@ -56,7 +60,7 @@ func main() {
 	pool, err := storage.CreatePool(initCtx, pgConfig, log)
 	if err != nil {
 		log.Error("failed to initialize database pool", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 	defer func() {
 		log.Info("closing postgres connection pool")
@@ -82,7 +86,7 @@ func main() {
 	rClient, err := cache.New(redisCfg, log)
 	if err != nil {
 		log.Error("failed to initialize redis client", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 	defer func() {
 		log.Info("closing redis client")
@@ -138,7 +142,7 @@ func main() {
 		log.Info("received shutdown signal", slog.String("signal", sig.String()))
 	case err := <-serverErr:
 		log.Error("server crashed", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -149,4 +153,5 @@ func main() {
 	}
 
 	log.Info("server exited cleanly")
+	return 0
 }

@@ -80,10 +80,10 @@ func BadYear() *ErrorApp {
 	}
 }
 
-func LongDescription() *ErrorApp {
+func BadDescription() *ErrorApp {
 	return &ErrorApp{
 		Code:    http.StatusBadRequest,
-		Message: "too long description",
+		Message: "invalid description",
 	}
 }
 

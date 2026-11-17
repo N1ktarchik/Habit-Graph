@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/N1ktarchik/habit-graph/internal/core/errors"
 	"github.com/google/uuid"
+
+	"github.com/N1ktarchik/habit-graph/internal/core/errors"
 )
 
 func DecodeJSON(r *http.Request, payload any) error {

@@ -3,64 +3,59 @@ services:
     image: postgres:16-alpine
     container_name: habbit-graph-postgres
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 3s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
       timeout: 5s
       retries: 5
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
 
   redis:
     image: redis:7-alpine
     container_name: habbit-graph-redis
     restart: unless-stopped
-    env_file:
-      - .env
-    command: >
-      sh -c '
-      if [ -n "$$REDIS_PASSWORD" ]; then
-        redis-server --requirepass "$$REDIS_PASSWORD"
-      else
-        redis-server
-      fi
-      '
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
-      interval: 3s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
       timeout: 5s
       retries: 5
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
 
   migrate:
     image: migrate/migrate:v4.18.1
     container_name: habbit-graph-migrate
     volumes:
-      - ./migrations:/migrations:ro
-    env_file:
-      - .env
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        migrate -path=/migrations \
-        -database="postgres://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@postgres:5432/$${POSTGRES_DB}?sslmode=disable" \
-        up
+      - ./migrations:/migrations
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+        "up",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/n1ktarchik/habit-graph-api:latest
     container_name: habbit-graph-api
     restart: unless-stopped
     env_file:
@@ -74,20 +69,28 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    image: ghcr.io/n1ktarchik/habit-graph-frontend:latest
     container_name: habbit-graph-frontend
     restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
       - api
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: habbit-graph-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --interval 60
 
 volumes:
-  pg_data:
+  postgres_data:
   redis_data:
